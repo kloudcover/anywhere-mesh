@@ -1,6 +1,6 @@
 ## k6 Load Testing for Anywhere Mesh
 
-This suite targets the ALB-exposed ingress at your domain. Default domain: `blah.kloudcover.com`.
+This suite targets the ALB-exposed ingress at your domain. Example domain from infra params: `e2e.clustermaestro.com`.
 
 ### Install k6
 
@@ -9,13 +9,13 @@ This suite targets the ALB-exposed ingress at your domain. Default domain: `blah
 
 ### Environment
 
-Create a `.env` or export variables before running:
+Create a `.env` or export variables before running (see `env.example`):
 
 ```
-export TARGET_HOST="blah.kloudcover.com"
+export TARGET_HOST="your.domain"
 export BASE_URL="https://${TARGET_HOST}"
 export WS_URL="wss://${TARGET_HOST}:8082"
-export TEST_TAGS="env:prod,service:mesh"
+export TEST_TAGS="env:dev,service:mesh"
 ```
 
 ### Scenarios

@@ -61,11 +61,12 @@ docker run -p 3001:3000 -e PORT=3000 test-app-rust
 
 ## Load Testing
 
-This application is optimized for load testing scenarios:
+This application is optimized for load testing scenarios. When run through the mesh, the health endpoint is `/api/health` and the app listens on port 3000 by default.
+
+See `../load-test/README.md` for full scenarios. Quick local smoke (bypassing the mesh):
 
 ```bash
-# Example k6 test
-k6 run -e TARGET_HOST=localhost -e BASE_URL=http://localhost:3000 load-test-script.js
+TARGET_HOST=localhost BASE_URL=http://127.0.0.1:3000 k6 run ../load-test/http-smoke.js
 ```
 
 ## Build Structure

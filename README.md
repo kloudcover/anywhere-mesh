@@ -161,16 +161,7 @@ Copy `load-test/env.example` to `.env` when working with multiple scenarios and 
 
 ## Infrastructure (CDK)
 
-The CDK stack in `infra/` bootstraps an ECS Fargate environment, ALB listeners (HTTPS on 443 and 8082), Route53 records, CloudWatch log groups, and IAM roles. It assumes an existing VPC and Route53 hosted zone.
-
-```bash
-cd infra
-npm install
-npm run build
-cdk synth
-cdk bootstrap   # once per environment if you don't have a bootstrap stack
-cdk deploy --require-approval never
-```
+See `infra/README.md` for setup, parameters, and deployment steps.
 
 For the canned e2e workflow use `task deploy-e2e-infra` and `task e2e-down` from the repository root.
 
