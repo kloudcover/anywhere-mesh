@@ -1,0 +1,12 @@
+{
+  "account": "601394826940",
+  "region": "us-west-2",
+  "hostedZoneId": "ZU20SE53GVCYV",
+  "zoneName": "e2e.clustermaestro.com",
+  "domainName": "e2e.clustermaestro.com",
+  "vpcId": "vpc-849531e0",
+  "subnetId": "subnet-9b2938c2",
+  "clusterName": "e2e-mesh-cluster",
+  "allowedRoleArns": "arn:aws:sts::601394826940:assumed-role/*",
+  "serviceConnectNamespace": "mesh-e2e.local"
+}

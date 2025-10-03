@@ -1,0 +1,13 @@
+.cdk.out
+target/**
+node_modules/**
+dist/**
+build/**
+**/out/**
+.git/**
+**/.cdk/**
+infra/**
+**/*.d.ts
+**/*.js
+**/*.ts
+**/*.tsx

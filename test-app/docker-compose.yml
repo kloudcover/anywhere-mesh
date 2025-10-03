@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  mesh-client:
+    build:
+      context: ../
+    volumes:
+      - ${HOME}/.aws:/root/.aws
+    develop:
+      watch:
+        - path: ../mesh
+          action: rebuild
+    depends_on:
+      test-app:
+        condition: service_healthy
+    command: >
+      client
+      --ingress-endpoint wss://mesh.e2e.clustermaestro.com:8082
+      --local-endpoint http://test-app:3000
+      --host test-app.e2e.clustermaestro.com
+      --service-name test-app
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "https://test-app.e2e.clustermaestro.com/api/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+  mesh-client-service-connect:
+    build:
+      context: ../
+    volumes:
+      - ${HOME}/.aws:/root/.aws
+    command: >
+      client
+      --ingress-endpoint wss://mesh.e2e.clustermaestro.com:8082
+      --local-endpoint http://test-app:3000
+      --host mesh-ingress
+      --service-name test-app
+  test-app:
+    build:
+      context: .
+    environment:
+      - PORT=3000
+    ports:
+      - "${PORT:-3000}:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s

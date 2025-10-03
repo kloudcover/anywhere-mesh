@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECS Mesh Test App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .api-test {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .response {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 ECS Mesh Test Application</h1>
+        
+        <div class="status">
+            <h2>🎯 Application Status</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>Service Info</h3>
+                    <p><strong>Service:</strong> test-app</p>
+                    <p><strong>Port:</strong> 3000</p>
+                    <p><strong>Status:</strong> <span class="badge">RUNNING</span></p>
+                </div>
+                <div class="info-card">
+                    <h3>Connection Info</h3>
+                    <p><strong>Client ID:</strong> <span id="clientId">Loading...</span></p>
+                    <p><strong>Timestamp:</strong> <span id="timestamp">Loading...</span></p>
+                    <p><strong>Host:</strong> <span id="hostname">Loading...</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-test">
+            <h2>🧪 API Test Endpoints</h2>
+            <p>Test different endpoints to verify the mesh routing is working correctly:</p>
+            
+            <button onclick="testEndpoint('/api/health')">Test Health Check</button>
+            <button onclick="testEndpoint('/api/info')">Test Service Info</button>
+            <button onclick="testEndpoint('/api/echo?message=hello')">Test Echo</button>
+            <button onclick="testEndpoint('/api/time')">Test Current Time</button>
+            <button onclick="testHeaders()">Test Headers</button>
+            
+            <div id="response" class="response" style="display: none;"></div>
+        </div>
+
+        <div class="status">
+            <h2>📊 Request Log</h2>
+            <div id="requestLog" class="response">
+Welcome to ECS Mesh Test App!
+This application is designed to test the Anywhere Mesh mesh routing.
+
+Ready to receive requests...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update dynamic info
+        document.getElementById('clientId') = Math.random().toString(36).substr(2, 9);
+        document.getElementById('timestamp') = new Date().toISOString();
+        document.getElementById('hostname') = window.location.hostname;
+
+        function log(message) {
+            const logElement = document.getElementById('requestLog');
+            const timestamp = new Date().toISOString();
+            logElement.textContent += `\n[${timestamp}] ${message}`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        async function testEndpoint(path) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'block';
+            responseDiv.textContent = 'Loading...';
+            
+            log(`Testing endpoint: ${path}`);
+            
+            try {
+                const response = await fetch(path);
+                const text = await response.text();
+                
+                const result = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    body: text
+                };
+                
+                responseDiv.textContent = JSON.stringify(result, null, 2);
+                log(`✅ ${path} - Status: ${response.status}`);
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+                log(`❌ ${path} - Error: ${error.message}`);
+            }
+        }
+
+        async function testHeaders() {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'block';
+            responseDiv.textContent = 'Loading...';
+            
+            log('Testing request headers...');
+            
+            try {
+                const response = await fetch('/api/headers', {
+                    headers: {
+                        'X-Test-Header': 'mesh-test',
+                        'X-Client-ID': document.getElementById('clientId').textContent
+                    }
+                });
+                const text = await response.text();
+                
+                const result = {
+                    status: response.status,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    body: text
+                };
+                
+                responseDiv.textContent = JSON.stringify(result, null, 2);
+                log(`✅ Headers test - Status: ${response.status}`);
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+                log(`❌ Headers test - Error: ${error.message}`);
+            }
+        }
+
+        // Auto-update timestamp every second
+        setInterval(() => {
+            document.getElementById('timestamp').textContent = new Date().toISOString();
+        }, 1000);
+
+        log('Test application initialized successfully');
+    </script>
+</body>
+</html>
+

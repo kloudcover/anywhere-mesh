@@ -1,0 +1,39 @@
+[workspace]
+resolver = "2"
+members = [
+    "mesh"
+]
+exclude = [
+    "test-app"
+]
+
+[workspace.dependencies]
+tokio = { version = "1.0", features = ["full"] }
+tokio-tungstenite = { version = "0.20", features = ["native-tls"] }
+futures-util = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hyper = { version = "0.14", features = ["full"] }
+hyper-tls = "0.5"
+aws-config = "1.0"
+aws-credential-types = "1.0"
+aws-sdk-ecs = "1.0"
+aws-sdk-sts = { version = "1.0" }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+anyhow = "1.0"
+clap = { version = "4.0", features = ["derive", "env"] }
+async-trait = "0.1"
+serde_yaml = "0.9"
+regex = "1.0"
+base64 = "0.22"
+sha2 = "0.10"
+hex = "0.4"
+console = "0.15"
+indicatif = "0.17" 
+hmac = "0.12"
+percent-encoding = "2.3"
+chrono = { version = "0.4" }
+aws-sigv4 = "0.56"
+thiserror = "1.0"

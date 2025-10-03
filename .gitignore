@@ -1,0 +1,59 @@
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# CDK
+infra/cdk.out/
+infra/node_modules/
+infra/.env
+infra/cdk.context.json
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test files
+test-websocket.html
+test-websocket.js
+websocket-test.html
+*.test.html
+
+# Development scripts
+debug-*.sh
+fix-*.sh
+manual-*.sh
+
+# Build artifacts
+*.deb
+*.rpm
+*.tar.gz
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.git.backup

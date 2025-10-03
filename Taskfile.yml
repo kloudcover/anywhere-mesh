@@ -1,0 +1,150 @@
+# Anywhere Mesh Taskfile
+# https://taskfile.dev/
+
+version: '3'
+
+vars:
+  PROJECT_NAME: ecs-anywhere-mesh
+  ECR_REGISTRY: public.ecr.aws/kloudcover
+  IMAGE_NAME: ecs-anywhere-mesh
+  VERSION: 0.0.5
+
+tasks:
+  # Setup buildx builder for multi-arch builds
+  setup-builder:
+    desc: Setup Docker buildx for multi-architecture builds
+    cmds:
+      - docker buildx create --name multiarch --driver docker-container --use || true
+      - docker buildx inspect --bootstrap
+
+  # Build for single architecture (local development)
+  build:
+    desc: Build for current architecture only
+    cmds:
+      - docker build -t {{.ECR_REGISTRY}}/{{.IMAGE_NAME}}:{{.VERSION}} .
+
+  lint:
+    desc: Lint the code
+    cmds:
+      - cargo fmt -- --check
+      - cargo clippy --all-targets -- -D warnings
+  test:
+    desc: Test the code
+    cmds:
+      - cargo test
+  # Build and push multi-architecture image
+  push:
+    desc: Build and push multi-architecture image (linux/amd64,linux/arm64)
+    deps: [setup-builder]
+    cmds:
+      - |
+        echo "Building and pushing multi-arch image: {{.ECR_REGISTRY}}/{{.IMAGE_NAME}}:{{.VERSION}}"
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --tag {{.ECR_REGISTRY}}/{{.IMAGE_NAME}}:{{.VERSION}} \
+          --tag {{.ECR_REGISTRY}}/{{.IMAGE_NAME}}:latest \
+          --push \
+          .
+
+  # Build for specific architecture
+  build-amd64:
+    desc: Build for AMD64 only
+    deps: [setup-builder]
+    cmds:
+      - docker buildx build --platform linux/amd64 -t {{.ECR_REGISTRY}}/{{.IMAGE_NAME}}:{{.VERSION}}-amd64 --load .
+
+  build-arm64:
+    desc: Build for ARM64 only  
+    deps: [setup-builder]
+    cmds:
+      - docker buildx build --platform linux/arm64 -t {{.ECR_REGISTRY}}/{{.IMAGE_NAME}}:{{.VERSION}}-arm64 --load .
+
+  # ECR login
+  ecr-login:
+    desc: Login to ECR Public
+    cmds:
+      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+  # Full workflow: login, build, and push
+  publish:
+    desc: Complete workflow - login, build multi-arch, and push
+    cmds:
+      - task: ecr-login
+      - task: push
+
+  deploy-e2e-infra:
+    desc: Deploy the mesh infrastructure
+    cmds:
+      - |
+        cd infra
+        cdk deploy --require-approval never
+
+  load-test:
+    desc: Run the load test (HTTP + WebSocket)
+    cmds:
+      - |
+        cd test-app
+        docker compose up -d
+        sleep 5  # Give services time to start
+      - |
+        cd load-test
+        echo "Running HTTP smoke test..."
+        TARGET_HOST=test-app.e2e.clustermaestro.com k6 run http-smoke.js
+        echo "Running WebSocket connection test..."
+        TARGET_HOST=test-app.e2e.clustermaestro.com k6 run ws-connect.js
+      
+  e2e-down:
+    desc: Bring down the e2e infrastructure
+    cmds:
+      - |
+        cd infra
+        cdk deploy --require-approval never -c inactive=true
+      - |
+        cd test-app
+        docker compose down
+
+
+  e2e:
+    desc: Test the mesh end to end
+    cmds:
+      - task: deploy-e2e-infra
+      - task: load-test
+      # - task: e2e-down
+
+  exec-test-app:
+    desc: Connect to TestApp container via ECS exec
+    cmds:
+      - |
+        # List services and find the test service
+        SERVICE_ARN=$(aws ecs list-services \
+          --cluster e2e-mesh-cluster \
+          --query 'serviceArns[?contains(@, `ecs-anywhere-mesh-e2e-TestService`)]' \
+          --output text | head -n1)
+
+        if [ "$SERVICE_ARN" = "None" ] || [ -z "$SERVICE_ARN" ]; then
+          echo "No test service found matching pattern 'ecs-anywhere-mesh-e2e-TestService*'"
+          exit 1
+        fi
+
+        # Extract service name from ARN
+        SERVICE_NAME=$(basename "$SERVICE_ARN")
+
+        # Get task ARN for the test service
+        TASK_ARN=$(aws ecs list-tasks \
+          --cluster e2e-mesh-cluster \
+          --service-name "$SERVICE_NAME" \
+          --query 'taskArns[0]' \
+          --output text)
+
+        if [ "$TASK_ARN" = "None" ] || [ -z "$TASK_ARN" ]; then
+          echo "No running tasks found for service $SERVICE_NAME"
+          exit 1
+        fi
+
+        aws ecs execute-command \
+          --cluster e2e-mesh-cluster \
+          --task "$TASK_ARN" \
+          --container test-client \
+          --interactive \
+          --command "/bin/sh"
+
